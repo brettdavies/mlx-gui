@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# upload_pip.sh - Automated PyPI publishing script for mlx-gui
-# Usage: ./upload_pip.sh
+# upload_pip.sh - Automated PyPI publishing script for mlx-gui using uv
+# Usage: ./scripts/upload_pip.sh
 
 set -e  # Exit on any error
 
-echo "🚀 MLX-GUI PyPI Upload Script"
-echo "=============================="
+echo "🚀 MLX-GUI PyPI Upload Script (UV)"
+echo "===================================="
 
 # Check if we're in the right directory
 if [ ! -f "pyproject.toml" ]; then
@@ -21,28 +21,35 @@ if [ ! -f "$HOME/.pypirc" ]; then
     exit 1
 fi
 
+# Check if uv is available
+if ! command -v uv &> /dev/null; then
+    echo "❌ Error: uv not found. Please install uv first."
+    echo "   Install with: curl -LsSf https://astral.sh/uv/install.sh | sh"
+    exit 1
+fi
+
 # Clean previous builds
 echo "🧹 Cleaning previous builds..."
 rm -rf dist/ build/ *.egg-info/
 
-# Install/upgrade build tools
-echo "🔧 Installing build dependencies..."
-python -m pip install --upgrade build twine
+# Install/upgrade build tools using uv
+echo "🔧 Installing build dependencies with uv..."
+uv add build twine --group build
 
-# Build the package
-echo "📦 Building package..."
-python -m build
+# Build the package using uv
+echo "📦 Building package with uv..."
+uv build
 
 # Verify the build
 echo "✅ Verifying package integrity..."
-python -m twine check dist/*
+uv run twine check dist/*.whl dist/*.tar.gz
 
 # Show what will be uploaded
 echo "📋 Package contents:"
 ls -la dist/
 
-# Get version from pyproject.toml
-VERSION=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+# Get version from pyproject.toml using uv
+VERSION=$(uv run python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
 echo "📋 Version to upload: $VERSION"
 
 # Ask for confirmation
@@ -51,8 +58,8 @@ read -p "🔥 Ready to upload mlx-gui v$VERSION to PyPI? (y/N): " -n 1 -r
 echo ""
 
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "⬆️  Uploading to PyPI..."
-    python -m twine upload dist/*
+    echo "⬆️  Uploading to PyPI using uv..."
+    uv run twine upload dist/*
     
     echo ""
     echo "🎉 Success! MLX-GUI v$VERSION published to PyPI!"
@@ -66,4 +73,4 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 else
     echo "❌ Upload cancelled."
     exit 0
-fi
+fi 

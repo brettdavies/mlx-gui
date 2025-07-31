@@ -13,13 +13,17 @@ if [ ! -f "pyproject.toml" ]; then
     exit 1
 fi
 
-# Activate virtual environment
-echo "📦 Activating virtual environment..."
-source .venv/bin/activate
+# Use UV environment (no need to activate)
+echo "📦 Using UV environment..."
+# UV manages the environment automatically
 
-# Install PyInstaller if not already installed
-echo "📦 Installing PyInstaller..."
-pip install pyinstaller
+# Ensure PyInstaller is available (should be installed via uv sync --extra app)
+echo "📦 Verifying PyInstaller with UV..."
+if ! uv run pyinstaller --version > /dev/null 2>&1; then
+    echo "❌ PyInstaller not found. Run: uv sync --extra app --extra audio --extra vision"
+    exit 1
+fi
+echo "✅ PyInstaller available via UV"
 
 # Check for critical dependencies
 echo "🔍 Checking critical dependencies..."
@@ -27,17 +31,15 @@ CRITICAL_DEPS=("mlx-lm" "mlx" "rumps" "fastapi" "uvicorn" "transformers" "huggin
 MISSING_DEPS=""
 
 for dep in "${CRITICAL_DEPS[@]}"; do
-    if ! pip show "$dep" > /dev/null 2>&1; then
+    if ! uv run python -c "import ${dep//-/_}" > /dev/null 2>&1; then
         MISSING_DEPS="$MISSING_DEPS $dep"
     fi
 done
 
 if [ -n "$MISSING_DEPS" ]; then
     echo "❌ Missing critical dependencies:$MISSING_DEPS"
-    echo "💡 Install with: pip install -e \".[app,audio,vision]\""
-    echo "💡 Or from requirements: pip install -r requirements.txt"
-    echo "💡 For audio support: pip install mlx-whisper parakeet-mlx"
-    echo "💡 For vision support: pip install mlx-vlm timm torchvision"
+    echo "💡 Install with: uv sync --extra app --extra audio --extra vision"
+    echo "💡 Or add missing packages: uv add $MISSING_DEPS"
     exit 1
 fi
 
@@ -45,17 +47,19 @@ echo "✅ All critical dependencies found"
 
 # Show key MLX library versions for troubleshooting
 echo "📋 Key MLX library versions:"
-pip show mlx-lm mlx-vlm | grep -E "^(Name|Version):"
+uv run python -c "
+import mlx_lm, mlx_vlm
+print(f'mlx-lm: {mlx_lm.__version__ if hasattr(mlx_lm, \"__version__\") else \"unknown\"}')
+print(f'mlx-vlm: {mlx_vlm.__version__ if hasattr(mlx_vlm, \"__version__\") else \"unknown\"}')
+"
 
-# Ensure latest audio and vision dependencies
-echo "📦 Ensuring latest audio and vision dependencies..."
-pip install parakeet-mlx -U
-pip install av -U
-pip install ffmpeg-binaries -U
+# Audio and vision dependencies should be managed by uv.lock
+echo "📦 Audio and vision dependencies managed by UV lock file..."
+echo "ℹ️  To update dependencies, use: uv sync --upgrade"
 
 # Initialize ffmpeg binaries to ensure they're downloaded
 echo "📦 Downloading FFmpeg binaries..."
-python3 -c "
+uv run python -c "
 import ffmpeg
 try:
     ffmpeg.init()
@@ -64,13 +68,16 @@ except Exception as e:
     print(f'⚠️ FFmpeg init failed: {e}')
     print('FFmpeg will be downloaded at runtime')
 "
-pip install mlx-vlm -U
-pip install mlx-lm -U
-pip install timm -U
-pip install torchvision -U
-# Replace full OpenCV with headless build to avoid crypto conflicts
-pip uninstall opencv-python -y 2>/dev/null || true
-pip install opencv-python-headless -U
+
+# OpenCV should be managed by UV dependencies
+echo "📦 OpenCV managed by UV dependencies..."
+uv run python -c "
+try:
+    import cv2
+    print('✅ OpenCV available')
+except ImportError:
+    print('⚠️ OpenCV not available - may cause vision model issues')
+"
 
 # Clean previous builds
 echo "🧹 Cleaning previous builds..."
@@ -161,14 +168,47 @@ hiddenimports += [
 ]
 EOF
 
-# Copy FFmpeg binary directly from venv instead of using hook
-FFMPEG_BINARY="$PWD/.venv/lib/python3.11/site-packages/ffmpeg/binaries/ffmpeg"
-FFPROBE_BINARY="$PWD/.venv/lib/python3.11/site-packages/ffmpeg/binaries/ffprobe"
+# Get FFmpeg binaries from current Python environment with flexible path detection
+PYTHON_SITE_PACKAGES=$(python -c "import site; print(site.getsitepackages()[0])")
+VENV_BIN_DIR=".venv/bin"
 
-if [ -f "$FFMPEG_BINARY" ]; then
-    echo "✅ Found FFmpeg binary at: $FFMPEG_BINARY"
-    echo "✅ Found FFprobe binary at: $FFPROBE_BINARY"
+# Try multiple possible ffmpeg locations
+FFMPEG_PATHS=(
+    "$PYTHON_SITE_PACKAGES/ffmpeg/binaries/ffmpeg"
+    "$VENV_BIN_DIR/ffmpeg"
+    "/opt/homebrew/bin/ffmpeg"
+    "/usr/local/bin/ffmpeg"
+)
 
+FFPROBE_PATHS=(
+    "$PYTHON_SITE_PACKAGES/ffmpeg/binaries/ffprobe"
+    "$VENV_BIN_DIR/ffprobe"
+    "/opt/homebrew/bin/ffprobe"
+    "/usr/local/bin/ffprobe"
+)
+
+FFMPEG_BINARY=""
+FFPROBE_BINARY=""
+
+# Find ffmpeg binary
+for path in "${FFMPEG_PATHS[@]}"; do
+    if [ -f "$path" ]; then
+        FFMPEG_BINARY="$path"
+        echo "✅ Found FFmpeg binary at: $FFMPEG_BINARY"
+        break
+    fi
+done
+
+# Find ffprobe binary
+for path in "${FFPROBE_PATHS[@]}"; do
+    if [ -f "$path" ]; then
+        FFPROBE_BINARY="$path"
+        echo "✅ Found FFprobe binary at: $FFPROBE_BINARY"
+        break
+    fi
+done
+
+if [ -n "$FFMPEG_BINARY" ] && [ -n "$FFPROBE_BINARY" ]; then
     # Copy to project directory for PyInstaller to pick up
     mkdir -p ./ffmpeg_binaries
     cp "$FFMPEG_BINARY" ./ffmpeg_binaries/ffmpeg
@@ -177,7 +217,11 @@ if [ -f "$FFMPEG_BINARY" ]; then
 
     echo "📦 Copied FFmpeg binaries to ./ffmpeg_binaries/"
 else
-    echo "❌ FFmpeg binary not found at: $FFMPEG_BINARY"
+    echo "❌ FFmpeg binaries not found in any expected location"
+    echo "   Tried paths:"
+    for path in "${FFMPEG_PATHS[@]}"; do
+        echo "   - $path"
+    done
     echo "⚠️ Audio transcription will not work"
 fi
 
@@ -821,8 +865,8 @@ PYINSTALLER_CMD=(
     "--exclude" "*libtorch*"
 )
 
-# Read version from Python module
-VERSION=$(python3 -c "from src.mlx_gui import __version__; print(__version__)")
+# Read version from Python module using UV
+VERSION=$(uv run python -c "from src.mlx_gui import __version__; print(__version__)")
 echo "📝 Building version: $VERSION"
 
 # Create a custom .spec file for maximum control over SSL library exclusion
@@ -1000,9 +1044,9 @@ app = BUNDLE(
 
 SPEC_EOF
 
-# Run PyInstaller with the custom spec file
+# Run PyInstaller with the custom spec file using UV
 echo "🔨 Building app bundle with custom spec file..."
-pyinstaller MLX-GUI.spec --noconfirm --clean
+uv run pyinstaller MLX-GUI.spec --noconfirm --clean
 
 # Clean up temporary hook files
 echo "🧹 Cleaning up temporary hook files..."
@@ -1049,7 +1093,7 @@ if [ -d "dist/MLX-GUI.app" ]; then
         echo "🔏 Signing app bundle..."
 
         # Sign all executables and libraries first (deep signing)
-        codesign --force --deep --sign "$CERT_NAME" --options runtime --entitlements entitlements.plist "dist/MLX-GUI.app"
+        codesign --force --deep --sign "$CERT_NAME" --options runtime --entitlements scripts/entitlements.plist "dist/MLX-GUI.app"
 
         # Verify the signature
         if codesign --verify --verbose "dist/MLX-GUI.app" 2>/dev/null; then

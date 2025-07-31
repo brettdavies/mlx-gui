@@ -51,7 +51,7 @@ TEST_MODELS = {
     }
 }
 
-class TestResult:
+class ModelTestResult:
     def __init__(self, name: str, success: bool = False, message: str = "", details: Dict = None):
         self.name = name
         self.success = success
@@ -64,7 +64,7 @@ class TestResult:
 
 class MLXTestSuite:
     def __init__(self):
-        self.results: List[TestResult] = []
+        self.results: List[ModelTestResult] = []
         self.client = None
 
     async def __aenter__(self):
@@ -75,7 +75,7 @@ class MLXTestSuite:
         if self.client:
             await self.client.aclose()
 
-    def add_result(self, result: TestResult):
+    def add_result(self, result: ModelTestResult):
         self.results.append(result)
         print(f"  {result}")
 
@@ -98,17 +98,17 @@ class MLXTestSuite:
             response = await self.client.get(f"{BASE_URL}/v1/system/status")
             if response.status_code == 200:
                 status = response.json()
-                self.add_result(TestResult(
+                self.add_result(ModelTestResult(
                     "Server Status",
                     True,
                     f"Server online - {status.get('memory', {}).get('total_gb', 'unknown')}GB RAM"
                 ))
                 return True
             else:
-                self.add_result(TestResult("Server Status", False, f"HTTP {response.status_code}"))
+                self.add_result(ModelTestResult("Server Status", False, f"HTTP {response.status_code}"))
                 return False
         except Exception as e:
-            self.add_result(TestResult("Server Status", False, f"Connection failed: {e}"))
+            self.add_result(ModelTestResult("Server Status", False, f"Connection failed: {e}"))
             return False
 
     async def test_admin_interface(self) -> bool:
@@ -120,16 +120,16 @@ class MLXTestSuite:
             if response.status_code == 200:
                 content = response.text
                 if "MLX-GUI Admin" in content:
-                    self.add_result(TestResult("Admin Interface", True, "Admin page accessible"))
+                    self.add_result(ModelTestResult("Admin Interface", True, "Admin page accessible"))
                     return True
                 else:
-                    self.add_result(TestResult("Admin Interface", False, "Admin page content unexpected"))
+                    self.add_result(ModelTestResult("Admin Interface", False, "Admin page content unexpected"))
                     return False
             else:
-                self.add_result(TestResult("Admin Interface", False, f"HTTP {response.status_code}"))
+                self.add_result(ModelTestResult("Admin Interface", False, f"HTTP {response.status_code}"))
                 return False
         except Exception as e:
-            self.add_result(TestResult("Admin Interface", False, f"Failed to access: {e}"))
+            self.add_result(ModelTestResult("Admin Interface", False, f"Failed to access: {e}"))
             return False
 
     async def test_models_endpoint(self) -> Dict[str, List[str]]:
@@ -173,7 +173,7 @@ class MLXTestSuite:
                         available_models['unknown'].append(model_id)
 
                 total_models = len(models)
-                self.add_result(TestResult(
+                self.add_result(ModelTestResult(
                     "Models Endpoint",
                     True,
                     f"Found {total_models} models ({len(available_models['text'])} text, {len(available_models['audio'])} audio, {len(available_models['vision'])} vision, {len(available_models['embedding'])} embedding)"
@@ -181,10 +181,10 @@ class MLXTestSuite:
 
                 return available_models
             else:
-                self.add_result(TestResult("Models Endpoint", False, f"HTTP {response.status_code}"))
+                self.add_result(ModelTestResult("Models Endpoint", False, f"HTTP {response.status_code}"))
                 return {}
         except Exception as e:
-            self.add_result(TestResult("Models Endpoint", False, f"Request failed: {e}"))
+            self.add_result(ModelTestResult("Models Endpoint", False, f"Request failed: {e}"))
             return {}
 
     async def test_text_generation(self, model_name: str, model_label: str) -> bool:
@@ -192,7 +192,7 @@ class MLXTestSuite:
         print(f"\n💬 Testing Text Generation - {model_label}")
 
         if not model_name:
-            self.add_result(TestResult(f"Text Gen ({model_label})", False, "Model not configured"))
+            self.add_result(ModelTestResult(f"Text Gen ({model_label})", False, "Model not configured"))
             return False
 
         try:
@@ -225,7 +225,7 @@ class MLXTestSuite:
                 else:
                     extra_info = ""
 
-                self.add_result(TestResult(
+                self.add_result(ModelTestResult(
                     f"Text Gen ({model_label})",
                     True,
                     f"Generated: '{message}' ({usage['total_tokens']} tokens){extra_info}"
@@ -242,11 +242,11 @@ class MLXTestSuite:
                 except:
                     error_detail = f"HTTP {response.status_code}"
 
-                self.add_result(TestResult(f"Text Gen ({model_label})", False, error_detail))
+                self.add_result(ModelTestResult(f"Text Gen ({model_label})", False, error_detail))
                 return False
 
         except Exception as e:
-            self.add_result(TestResult(f"Text Gen ({model_label})", False, f"Request failed: {e}"))
+            self.add_result(ModelTestResult(f"Text Gen ({model_label})", False, f"Request failed: {e}"))
             return False
 
     async def test_audio_transcription(self, model_name: str) -> bool:
@@ -254,7 +254,7 @@ class MLXTestSuite:
         print(f"\n🎙️  Testing Audio Transcription (Parakeet) - {model_name}")
 
         if not model_name:
-            self.add_result(TestResult("Audio Transcription (Parakeet)", False, "Parakeet model not configured"))
+            self.add_result(ModelTestResult("Audio Transcription (Parakeet)", False, "Parakeet model not configured"))
             return False
 
         try:
@@ -264,7 +264,7 @@ class MLXTestSuite:
                 # Try alternative path if running from different directory
                 test_wav_path = os.path.join("tests", "test.wav")
                 if not os.path.exists(test_wav_path):
-                    self.add_result(TestResult("Audio Transcription (Parakeet)", False, f"test.wav file not found at {test_wav_path}"))
+                    self.add_result(ModelTestResult("Audio Transcription (Parakeet)", False, f"test.wav file not found at {test_wav_path}"))
                     return False
 
             # Test transcription
@@ -286,7 +286,7 @@ class MLXTestSuite:
                 # Display the actual transcribed output from the audio file
                 print(f"    📝 Transcribed text from audio: '{text}'")
 
-                self.add_result(TestResult(
+                self.add_result(ModelTestResult(
                     "Audio Transcription (Parakeet)",
                     True,
                     f"✅ Transcribed audio to text: '{text}' (Parakeet working)"
@@ -303,11 +303,11 @@ class MLXTestSuite:
                 except:
                     error_detail = f"HTTP {response.status_code}"
 
-                self.add_result(TestResult("Audio Transcription (Parakeet)", False, error_detail))
+                self.add_result(ModelTestResult("Audio Transcription (Parakeet)", False, error_detail))
                 return False
 
         except Exception as e:
-            self.add_result(TestResult("Audio Transcription (Parakeet)", False, f"Test failed: {e}"))
+            self.add_result(ModelTestResult("Audio Transcription (Parakeet)", False, f"Test failed: {e}"))
             return False
 
     async def test_whisper_transcription(self, model_name: str, model_label: str) -> bool:
@@ -315,7 +315,7 @@ class MLXTestSuite:
         print(f"\n🔊 Testing Whisper Transcription - {model_label} ({model_name})")
 
         if not model_name:
-            self.add_result(TestResult(f"Whisper Transcription ({model_label})", False, "Whisper model not configured"))
+            self.add_result(ModelTestResult(f"Whisper Transcription ({model_label})", False, "Whisper model not configured"))
             return False
 
         try:
@@ -325,7 +325,7 @@ class MLXTestSuite:
                 # Try alternative path if running from different directory
                 test_wav_path = os.path.join("tests", "test.wav")
                 if not os.path.exists(test_wav_path):
-                    self.add_result(TestResult(f"Whisper Transcription ({model_label})", False, f"test.wav file not found at {test_wav_path}"))
+                    self.add_result(ModelTestResult(f"Whisper Transcription ({model_label})", False, f"test.wav file not found at {test_wav_path}"))
                     return False
 
             # Test transcription with different parameters
@@ -376,7 +376,7 @@ class MLXTestSuite:
 
                 feature_str = f" ({', '.join(features)} working)" if features else ""
 
-                self.add_result(TestResult(
+                self.add_result(ModelTestResult(
                     f"Whisper Transcription ({model_label})",
                     True,
                     f"✅ MLX Whisper: '{text}' (lang: {language}){feature_str}"
@@ -393,11 +393,11 @@ class MLXTestSuite:
                 except:
                     error_detail = f"HTTP {response.status_code}"
 
-                self.add_result(TestResult(f"Whisper Transcription ({model_label})", False, error_detail))
+                self.add_result(ModelTestResult(f"Whisper Transcription ({model_label})", False, error_detail))
                 return False
 
         except Exception as e:
-            self.add_result(TestResult(f"Whisper Transcription ({model_label})", False, f"Test failed: {e}"))
+            self.add_result(ModelTestResult(f"Whisper Transcription ({model_label})", False, f"Test failed: {e}"))
             return False
 
     async def test_embedding_generation(self, model_name: str, model_label: str) -> bool:
@@ -405,7 +405,7 @@ class MLXTestSuite:
         print(f"\n🔗 Testing Embedding Generation - {model_label}")
 
         if not model_name:
-            self.add_result(TestResult(f"Embedding Gen ({model_label})", False, "Model not configured"))
+            self.add_result(ModelTestResult(f"Embedding Gen ({model_label})", False, "Model not configured"))
             return False
 
         try:
@@ -415,7 +415,7 @@ class MLXTestSuite:
                 # Try alternative path if running from different directory
                 test_chunk_path = os.path.join("tests", "test_chunk.txt")
                 if not os.path.exists(test_chunk_path):
-                    self.add_result(TestResult(f"Embedding Gen ({model_label})", False, f"test_chunk.txt not found at {test_chunk_path}"))
+                    self.add_result(ModelTestResult(f"Embedding Gen ({model_label})", False, f"test_chunk.txt not found at {test_chunk_path}"))
                     return False
 
             with open(test_chunk_path, 'r', encoding='utf-8') as f:
@@ -445,14 +445,14 @@ class MLXTestSuite:
 
                 # Validate embeddings
                 if not embeddings:
-                    self.add_result(TestResult(f"Embedding Gen ({model_label})", False, "No embeddings returned"))
+                    self.add_result(ModelTestResult(f"Embedding Gen ({model_label})", False, "No embeddings returned"))
                     return False
 
                 # Check that we got the expected number of embeddings
                 expected_count = len(test_chunks)
                 actual_count = len(embeddings)
                 if actual_count != expected_count:
-                    self.add_result(TestResult(f"Embedding Gen ({model_label})", False, f"Expected {expected_count} embeddings, got {actual_count}"))
+                    self.add_result(ModelTestResult(f"Embedding Gen ({model_label})", False, f"Expected {expected_count} embeddings, got {actual_count}"))
                     return False
 
                 # Check embedding dimensions and values
@@ -461,13 +461,13 @@ class MLXTestSuite:
 
                 # Validate embedding quality
                 if embedding_dim == 0:
-                    self.add_result(TestResult(f"Embedding Gen ({model_label})", False, "Empty embedding vector"))
+                    self.add_result(ModelTestResult(f"Embedding Gen ({model_label})", False, "Empty embedding vector"))
                     return False
 
                 # Check that embeddings are numerical and non-zero
                 non_zero_count = sum(1 for val in first_embedding if abs(val) > 1e-6)
                 if non_zero_count == 0:
-                    self.add_result(TestResult(f"Embedding Gen ({model_label})", False, "All embedding values are zero"))
+                    self.add_result(ModelTestResult(f"Embedding Gen ({model_label})", False, "All embedding values are zero"))
                     return False
 
                 # Output embeddings for verification
@@ -492,7 +492,7 @@ class MLXTestSuite:
 
                 # Success message with details
                 total_tokens = usage.get('total_tokens', 0)
-                self.add_result(TestResult(
+                self.add_result(ModelTestResult(
                     f"Embedding Gen ({model_label})",
                     True,
                     f"Generated {actual_count} embeddings (dim={embedding_dim}, {non_zero_count}/{embedding_dim} non-zero) ({total_tokens} tokens) (Qwen3 embeddings working!)"
@@ -509,11 +509,11 @@ class MLXTestSuite:
                 except:
                     error_detail = f"HTTP {response.status_code}"
 
-                self.add_result(TestResult(f"Embedding Gen ({model_label})", False, error_detail))
+                self.add_result(ModelTestResult(f"Embedding Gen ({model_label})", False, error_detail))
                 return False
 
         except Exception as e:
-            self.add_result(TestResult(f"Embedding Gen ({model_label})", False, f"Test failed: {e}"))
+            self.add_result(ModelTestResult(f"Embedding Gen ({model_label})", False, f"Test failed: {e}"))
             return False
 
     async def test_vision_generation(self, model_name: str, model_label: str) -> bool:
@@ -521,7 +521,7 @@ class MLXTestSuite:
         print(f"\n🖼️  Testing Vision Generation - {model_label}")
 
         if not model_name:
-            self.add_result(TestResult(f"Vision Gen ({model_label})", False, "Model not configured"))
+            self.add_result(ModelTestResult(f"Vision Gen ({model_label})", False, "Model not configured"))
             return False
 
         try:
@@ -581,7 +581,7 @@ class MLXTestSuite:
                 contains_red = 'red' in message.lower()
                 accuracy_note = " ✓ Correct!" if contains_red else " (unexpected response)"
 
-                self.add_result(TestResult(
+                self.add_result(ModelTestResult(
                     f"Vision Gen ({model_label})",
                     True,
                     f"Response: '{message}'{accuracy_note} ({usage['total_tokens']} tokens){model_info}"
@@ -598,11 +598,11 @@ class MLXTestSuite:
                 except:
                     error_detail = f"HTTP {response.status_code}"
 
-                self.add_result(TestResult(f"Vision Gen ({model_label})", False, error_detail))
+                self.add_result(ModelTestResult(f"Vision Gen ({model_label})", False, error_detail))
                 return False
 
         except Exception as e:
-            self.add_result(TestResult(f"Vision Gen ({model_label})", False, f"Test failed: {e}"))
+            self.add_result(ModelTestResult(f"Vision Gen ({model_label})", False, f"Test failed: {e}"))
             return False
 
     async def _test_text_via_vision_model(self, model_name: str, model_label: str) -> bool:
@@ -634,7 +634,7 @@ class MLXTestSuite:
                 else:
                     model_info = " (Gemma 3 via MLX-VLM)"
                 
-                self.add_result(TestResult(
+                self.add_result(ModelTestResult(
                     f"Vision Gen ({model_label})",
                     True,
                     f"Text via MLX-VLM: '{message}' ({usage['total_tokens']} tokens){model_info}"
@@ -651,11 +651,11 @@ class MLXTestSuite:
                 except:
                     error_detail = f"HTTP {response.status_code}"
 
-                self.add_result(TestResult(f"Vision Gen ({model_label})", False, error_detail))
+                self.add_result(ModelTestResult(f"Vision Gen ({model_label})", False, error_detail))
                 return False
 
         except Exception as e:
-            self.add_result(TestResult(f"Vision Gen ({model_label})", False, f"Text test failed: {e}"))
+            self.add_result(ModelTestResult(f"Vision Gen ({model_label})", False, f"Text test failed: {e}"))
             return False
 
     async def run_all_tests(self):
@@ -693,7 +693,7 @@ class MLXTestSuite:
             if model_name:
                 await self.test_text_generation(model_name, model_key.title())
             else:
-                self.add_result(TestResult(f"Text Gen ({model_key.title()})", False, "Model not available"))
+                self.add_result(ModelTestResult(f"Text Gen ({model_key.title()})", False, "Model not available"))
 
         # Test audio transcription
         print("\n🎵 Audio Transcription Tests")
@@ -704,7 +704,7 @@ class MLXTestSuite:
         if audio_model:
             await self.test_audio_transcription(audio_model)
         else:
-            self.add_result(TestResult("Audio Transcription (Parakeet)", False, "Parakeet model not available"))
+            self.add_result(ModelTestResult("Audio Transcription (Parakeet)", False, "Parakeet model not available"))
 
         # Test Whisper model
         whisper_turbo = actual_test_models["audio"].get("whisper_turbo")
@@ -712,7 +712,7 @@ class MLXTestSuite:
         if whisper_turbo:
             await self.test_whisper_transcription(whisper_turbo, "Whisper Large v3 Turbo")
         else:
-            self.add_result(TestResult("Whisper Transcription (Turbo)", False, "Whisper Large v3 Turbo model not available"))
+            self.add_result(ModelTestResult("Whisper Transcription (Turbo)", False, "Whisper Large v3 Turbo model not available"))
 
         # Test embedding generation
         print("\n🔗 Embedding Generation Tests")
@@ -723,21 +723,21 @@ class MLXTestSuite:
         if qwen3_embedding:
             await self.test_embedding_generation(qwen3_embedding, "Qwen3 Embedding")
         else:
-            self.add_result(TestResult("Embedding Generation (Qwen3)", False, "Qwen3 embedding model not available"))
+            self.add_result(ModelTestResult("Embedding Generation (Qwen3)", False, "Qwen3 embedding model not available"))
         
         # Test BGE embedding model
         bge_embedding = actual_test_models["embedding"].get("bge_small")
         if bge_embedding:
             await self.test_embedding_generation(bge_embedding, "BGE Small")
         else:
-            self.add_result(TestResult("Embedding Generation (BGE)", False, "BGE embedding model not available"))
+            self.add_result(ModelTestResult("Embedding Generation (BGE)", False, "BGE embedding model not available"))
         
         # Test MiniLM embedding model
         minilm_embedding = actual_test_models["embedding"].get("minilm")
         if minilm_embedding:
             await self.test_embedding_generation(minilm_embedding, "MiniLM L6")
         else:
-            self.add_result(TestResult("Embedding Generation (MiniLM)", False, "MiniLM embedding model not available"))
+            self.add_result(ModelTestResult("Embedding Generation (MiniLM)", False, "MiniLM embedding model not available"))
 
         # Test vision generation (Gemma 3n, Qwen2-VL)
         print("\n👁️  Vision Generation Tests")
@@ -746,7 +746,7 @@ class MLXTestSuite:
             if model_name:
                 await self.test_vision_generation(model_name, model_key.title())
             else:
-                self.add_result(TestResult(f"Vision Gen ({model_key.title()})", False, "Model not available"))
+                self.add_result(ModelTestResult(f"Vision Gen ({model_key.title()})", False, "Model not available"))
 
         # Test memory overload and automatic model unloading
         print("\n🧠 Memory Overload Test")
@@ -934,7 +934,7 @@ class MLXTestSuite:
                             unloaded = set(loaded_models) - set(new_loaded_models)
                             if unloaded:
                                 print(f"    🔄 AUTO-UNLOADED: {list(unloaded)} (LRU eviction working!)")
-                                self.add_result(TestResult(
+                                self.add_result(ModelTestResult(
                                     f"Auto-unload triggered by {model_label}",
                                     True,
                                     f"Successfully unloaded {list(unloaded)} to make space"
@@ -966,7 +966,7 @@ class MLXTestSuite:
                         error_detail = f"HTTP {load_response.status_code}"
 
                     print(f"    ❌ Failed to load {model_label}: {error_detail}")
-                    self.add_result(TestResult(
+                    self.add_result(ModelTestResult(
                         f"Memory overload - {model_label}",
                         False,
                         f"Failed to load: {error_detail}"
@@ -985,21 +985,21 @@ class MLXTestSuite:
                 if len(final_loaded_models) <= max_concurrent:
                     print(f"  ✅ SUCCESS: Model count ({len(final_loaded_models)}) respects limit ({max_concurrent})")
                     print(f"  ✅ AUTO-UNLOAD SYSTEM WORKING: Older models were automatically evicted")
-                    self.add_result(TestResult(
+                    self.add_result(ModelTestResult(
                         "Memory Management Test",
                         True,
                         f"Completed memory overload test - {len(final_loaded_models)} models remain loaded (limit: {max_concurrent})"
                     ))
                 else:
                     print(f"  ❌ FAILURE: Model count ({len(final_loaded_models)}) exceeds limit ({max_concurrent})")
-                    self.add_result(TestResult(
+                    self.add_result(ModelTestResult(
                         "Memory Management Test",
                         False,
                         f"Model count ({len(final_loaded_models)}) exceeds limit ({max_concurrent})"
                     ))
 
         except Exception as e:
-            self.add_result(TestResult(
+            self.add_result(ModelTestResult(
                 "Memory Management Test",
                 False,
                 f"Test failed: {e}"

@@ -253,3 +253,14 @@ generation_config.json
 !src/mlx_gui/assets/*.ico
 hooks/
 rthooks/
+
+# UV (keep uv.lock but ignore cache)
+.uv_cache/
+
+# IDE
+.cursor/
+.vscode/
+.DS_Store
+
+# Backup files
+*_backup.txt

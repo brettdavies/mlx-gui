@@ -15,15 +15,18 @@ AUDIO_FILE = "test.wav"
 MODEL = "parakeet-tdt-0-6b-v2"
 RESPONSE_FORMAT = "json"  # Options: json, text, verbose_json, srt, vtt
 
+# Get the directory where this test file is located
+TEST_DIR = Path(__file__).parent
+
 def test_audio_transcription():
     """Test the audio transcription endpoint."""
 
-    # Check if audio file exists
-    audio_path = Path(AUDIO_FILE)
+    # Check if audio file exists (look in the same directory as this test file)
+    audio_path = TEST_DIR / AUDIO_FILE
     if not audio_path.exists():
         print(f"❌ Error: Audio file '{AUDIO_FILE}' not found")
-        print(f"Please create a test audio file named '{AUDIO_FILE}' in the current directory")
-        return False
+        print(f"Please create a test audio file named '{AUDIO_FILE}' in the tests directory")
+        assert False, f"Audio file '{AUDIO_FILE}' not found"
 
     print(f"🎵 Testing audio transcription with:")
     print(f"   File: {AUDIO_FILE}")
@@ -84,16 +87,16 @@ def test_audio_transcription():
             except:
                 print(f"   Response: {response.text}")
 
-        return response.status_code == 200
+        assert response.status_code == 200
 
     except requests.exceptions.ConnectionError:
         print("❌ Error: Cannot connect to MLX-GUI server")
         print("   Make sure the server is running on http://localhost:8000")
-        return False
+        assert False, "Cannot connect to MLX-GUI server"
 
     except Exception as e:
         print(f"❌ Error: {e}")
-        return False
+        assert False, f"Error: {e}"
 
 def check_model_status():
     """Check if the parakeet model is loaded."""
@@ -112,10 +115,8 @@ def check_model_status():
             if status != 'loaded':
                 print(f"⚠️  Model '{MODEL}' is not loaded. It should load automatically on first use.")
                 # Skipping manual loading; rely on MLX-GUI to load the model when the first transcription request is made.
-                return True
             else:
                 print("✅ Model is ready!")
-                return True
 
         else:
             print(f"❌ Model '{MODEL}' not found")
@@ -123,11 +124,11 @@ def check_model_status():
             print(f"   curl -X POST {BASE_URL}/v1/models/install \\")
             print(f'     -H "Content-Type: application/json" \\')
             print(f'     -d \'{{"model_id": "mlx-community/parakeet-tdt-0.6b-v2", "name": "{MODEL}"}}\'')
-            return False
+            assert False, f"Model '{MODEL}' not found"
 
     except Exception as e:
         print(f"❌ Error checking model status: {e}")
-        return False
+        assert False, f"Error checking model status: {e}"
 
 def main():
     """Main test function."""
@@ -147,17 +148,21 @@ def main():
         sys.exit(1)
 
     # Check model status
-    if not check_model_status():
+    try:
+        check_model_status()
+    except AssertionError as e:
+        print(f"\n❌ Model check failed: {e}")
         sys.exit(1)
 
     print()
 
     # Run the transcription test
-    if test_audio_transcription():
+    try:
+        test_audio_transcription()
         print("\n🎉 Audio transcription test completed successfully!")
         sys.exit(0)
-    else:
-        print("\n❌ Audio transcription test failed!")
+    except AssertionError as e:
+        print(f"\n❌ Audio transcription test failed: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":

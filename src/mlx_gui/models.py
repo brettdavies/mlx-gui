@@ -11,7 +11,7 @@ from sqlalchemy import (
     Column, Integer, String, Text, DateTime, Boolean, Float, 
     ForeignKey, UniqueConstraint, Index, event
 )
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import relationship, Session
 from sqlalchemy.sql import func
 

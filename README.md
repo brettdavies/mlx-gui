@@ -216,21 +216,25 @@ mlx-gui tray
 mlx-gui start --port 8000
 ```
 
-### Option 3: Install from Source
+### Option 3: Install from Source (with uv - Recommended)
 ```bash
 # Clone the repository
 git clone https://github.com/RamboRogers/mlx-gui.git
 cd mlx-gui
 
-# Install dependencies
-pip install -e ".[app]"
+# Install dependencies (10-100x faster than pip)
+uv sync --extra app
 
 # Launch with system tray
-mlx-gui tray
+uv run mlx-gui tray
 
 # Or launch server only
-mlx-gui start --port 8000
+uv run mlx-gui start --port 8000
 ```
+
+> **💡 Why uv?** uv is 10-100x faster than pip and provides better dependency resolution.
+
+
 
 ## 🎮 Usage
 
@@ -391,35 +395,36 @@ Full API documentation is available at `/v1/docs` when the server is running, or
 
 ## 🛠️ Development
 
-### Setup Development Environment
+### uv - Recommended
+
+#### Setup Development Environment
 ```bash
 git clone https://github.com/RamboRogers/mlx-gui.git
 cd mlx-gui
 
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate
-
 # Install in development mode with audio and vision support
-pip install -e ".[dev,audio,vision]"
+uv sync --extra dev --extra audio --extra vision
 
 # Run tests
-pytest
+uv run pytest
 
 # Start development server
-mlx-gui start --reload
+uv run mlx-gui start --reload
 ```
 
-### Build Standalone App
+#### Build Standalone App
 ```bash
 # Install build dependencies with audio and vision support
-pip install rumps pyinstaller mlx-whisper parakeet-mlx mlx-vlm
+uv sync --extra app --extra audio --extra vision
 
 # Build macOS app bundle
-./build_app.sh
+uv run ./scripts/build_app.sh
 
 # Result: dist/MLX-GUI.app
 ```
+
+
+
 
 ## 🤝 Contributing
 
