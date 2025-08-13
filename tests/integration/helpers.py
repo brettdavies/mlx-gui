@@ -79,19 +79,34 @@ def _ensure_install_and_ready(session, model_name: str, model_id: Optional[str] 
 	return False
 
 
-CANDIDATES: Dict[str, List[Tuple[str, str]]] = {
+CANDIDATES: Dict[str, List[Tuple[str, str, str]]] = {
+	# Text models
 	"text": [
-		("smollm3-3b-4bit", "mlx-community/SmolLM3-3B-4bit"),
-		("llama-3.2-3b-instruct-4bit", "mlx-community/Llama-3.2-3B-Instruct-4bit"),
+		("qwen3-8b-6bit", "mlx-community/Qwen3-8B-MLX-6bit", "Qwen3 8B quantized model"),
+		("deepseek-r1-0528-qwen3-8b-mlx-8bit", "lmstudio-community/DeepSeek-R1-0528-Qwen3-8B-MLX-4bit", "DeepSeek R1 based on Qwen3"),
+		("smollm3-3b-4bit", "mlx-community/SmolLM3-3B-4bit", "SmolLM3 multilingual model"),
+		("mistral-small-3-2-24b-instruct-2506-mlx-4bit", "mlx-community/Mistral-Small-Instruct-2409-4bit", "Mistral Small 24B instruct model"),
 	],
-	"embedding": [
-		("bge-small-en-v1-5-bf16", "bge-small-en-v1-5-bf16"),
-		("all-minilm-l6-v2-4bit", "mlx-community/all-MiniLM-L6-v2-4bit"),
-		("qwen3-embedding-0-6b-4bit-dwq", "mlx-community/Qwen3-Embedding-0.6B-4bit-DWQ"),
-	],
+	# Audio models
 	"audio": [
-		("whisper-tiny", "mlx-community/whisper-tiny"),
-		("parakeet-tdt-0-6b-v2", "mlx-community/parakeet-tdt-0.6b-v2"),
+		("parakeet-tdt-0-6b-v2", "mlx-community/parakeet-tdt-0.6b-v2", "Parakeet transcription"),
+		("whisper-large-v3-turbo", "mlx-community/whisper-large-v3", "Whisper Large v3 Turbo"),
+		("whisper-tiny", "mlx-community/whisper-tiny", "Whisper Tiny (lightweight)"),
+	],
+	# Vision models
+	"vision": [
+		("gemma-3-27b-it-qat-4bit", "mlx-community/Gemma-3-27B-it-qat-4bit", "Gemma 3 text via MLX-VLM"),
+		("gemma-3n-e4b-it-mlx-8bit", "mlx-community/Gemma-3n-e4b-it-mlx-8bit", "Gemma 3n vision 8bit"),
+		("gemma-3n-e4b-it", "mlx-community/Gemma-3n-e4b-it", "Gemma 3n vision 4bit"),
+		("synthia-s1-27b-mlx-8bit", "mlx-community/synthia-s1-27b-mlx-8bit", "Synthia multimodal model"),
+		("mistral-small-3-2-24b-instruct-2506-mlx-4bit", "mlx-community/Mistral-Small-Instruct-2409-4bit", "Mistral Small 24B instruct model"),
+	],
+	# Embedding models
+	"embedding": [
+		("qwen3-embedding-4b-4bit-dwq", "mlx-community/Qwen3-Embedding-0.6B-4bit-DWQ", "Qwen3 embedding model"),
+		("bge-small-en-v1-5-bf16", "bge-small-en-v1-5-bf16", "BAAI BGE small English embeddings"),
+		("all-minilm-l6-v2-4bit", "mlx-community/all-MiniLM-L6-v2-4bit", "MiniLM distilled BERT embeddings"),
+		("multilingual-e5-large-mlx", "mlx-community/multilingual-e5-large-mlx", "E5 large multilingual embedding model"),
 	],
 }
 

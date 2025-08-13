@@ -427,6 +427,20 @@ uv run pytest tests/test_embeddings_endpoint.py -q
 Notes:
 - The embeddings test includes a base64 variant that is currently skipped unless the server is configured to return base64-encoded vectors. Default output is floats.
 
+### Tests
+
+- Unit tests (fast, in-process):
+  - Run: `make unit`
+- Integration tests (require running server):
+  - Run: `make integration`
+  - Dynamic, resource-aware model selection:
+    - To cap memory during tests: `export MLX_MAX_RAM_GB=6.0`
+    - To force a specific model per category:
+      - `MLX_TEST_TEXT=smollm3-3b-4bit`
+      - `MLX_TEST_EMBEDDING=all-minilm-l6-v2-4bit`
+      - `MLX_TEST_AUDIO=whisper-tiny`
+    - Tests prefer already installed models; otherwise they pick compatible models based on available RAM and persist the last choice in `tests/integration/.model_cache.json` across runs.
+
 ### Build Standalone App
 ```bash
 # Build macOS app bundle (script runs `uv sync` automatically)
