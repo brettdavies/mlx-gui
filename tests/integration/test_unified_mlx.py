@@ -19,9 +19,12 @@ import tempfile
 import time
 from pathlib import Path
 from typing import Dict, List, Optional
+import pytest
+from .conftest import BASE_URL
+
+pytestmark = pytest.mark.integration
 
 # Test configuration
-BASE_URL = "http://localhost:8000"
 TIMEOUT = 120.0
 
 # Test models - ALL Gemma 3 variants now use MLX-VLM

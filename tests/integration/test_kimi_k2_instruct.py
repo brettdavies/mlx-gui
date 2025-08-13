@@ -10,7 +10,7 @@ import json
 import time
 import psutil
 
-BASE_URL = "http://localhost:8000"
+from .conftest import BASE_URL
 MODEL_ID = "mlx-community/Kimi-K2-Instruct-4bit"
 
 def check_system_memory():

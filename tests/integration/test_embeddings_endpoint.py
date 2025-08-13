@@ -10,9 +10,12 @@ import requests
 import json
 import sys
 import time
+import pytest
+from .conftest import BASE_URL
+
+pytestmark = pytest.mark.integration
 
 
-BASE_URL = "http://localhost:8000"
 DEFAULT_MODEL_NAME = "qwen3-embedding-0-6b-4bit-dwq"
 DEFAULT_MODEL_ID = "mlx-community/Qwen3-Embedding-0.6B-4bit-DWQ"
 

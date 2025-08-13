@@ -8,7 +8,7 @@ import asyncio
 import httpx
 import json
 
-BASE_URL = "http://localhost:8000"
+from .conftest import BASE_URL
 
 async def test_embedding_discovery():
     """Test embedding model discovery with pipeline filters."""

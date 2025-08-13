@@ -10,9 +10,12 @@ import httpx
 import json
 import os
 from pathlib import Path
+import pytest
+from .conftest import BASE_URL
+
+pytestmark = pytest.mark.integration
 
 # Test configuration
-BASE_URL = "http://127.0.0.1:8000"
 TIMEOUT = 120.0
 
 async def test_vision_with_icon():

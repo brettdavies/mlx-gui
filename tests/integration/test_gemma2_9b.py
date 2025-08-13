@@ -9,7 +9,7 @@ import httpx
 import json
 import time
 
-BASE_URL = "http://localhost:8000"
+from .conftest import BASE_URL
 MODEL_ID = "mlx-community/gemma-2-9b-it-4bit"
 
 async def test_gemma2_model():

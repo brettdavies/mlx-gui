@@ -9,7 +9,7 @@ import httpx
 import time
 from typing import List, Dict
 
-BASE_URL = "http://localhost:8000"
+from .conftest import BASE_URL
 TIMEOUT = 60.0
 
 async def test_auto_unload_behavior():

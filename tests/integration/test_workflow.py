@@ -13,7 +13,7 @@ import json
 import time
 from typing import Dict, Any
 
-BASE_URL = "http://localhost:8000"
+from .conftest import BASE_URL
 
 async def test_workflow():
     """Test the complete MLX-GUI workflow."""

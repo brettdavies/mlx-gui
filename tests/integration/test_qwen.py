@@ -7,7 +7,7 @@ import asyncio
 import httpx
 import json
 
-BASE_URL = "http://localhost:8000"
+from .conftest import BASE_URL
 MODEL_ID = "Qwen/Qwen3-8B-MLX-6bit"
 
 async def test_qwen_model():

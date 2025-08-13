@@ -9,7 +9,7 @@ import httpx
 import json
 import time
 
-BASE_URL = "http://localhost:8000"
+from .conftest import BASE_URL
 MODEL_ID = "mlx-community/Llama-3.2-3B-Instruct-4bit"
 
 async def test_llama32_model():

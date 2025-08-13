@@ -37,7 +37,7 @@ from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 
 # Test configuration
-BASE_URL = "http://localhost:8000"
+from .conftest import BASE_URL
 TIMEOUT = 180.0  # Longer timeout for embedding models
 
 @dataclass

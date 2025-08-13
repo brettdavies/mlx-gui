@@ -9,7 +9,7 @@ import httpx
 import json
 import time
 
-BASE_URL = "http://localhost:8000"
+from .conftest import BASE_URL
 MODEL_ID = "mlx-community/SmolLM3-3B-4bit"
 
 async def test_smollm3_model():

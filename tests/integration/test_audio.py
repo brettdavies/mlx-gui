@@ -10,7 +10,7 @@ from pathlib import Path
 import json
 
 # Configuration
-BASE_URL = "http://localhost:8000"
+from .conftest import BASE_URL
 AUDIO_FILE = "test.wav"
 MODEL = "parakeet-tdt-0-6b-v2"
 RESPONSE_FORMAT = "json"  # Options: json, text, verbose_json, srt, vtt
