@@ -22,7 +22,7 @@ from typing import Dict, List, Optional
 import pytest
 from .conftest import BASE_URL
 
-pytestmark = pytest.mark.integration
+pytestmark = pytest.mark.skip(reason="Superseded by discrete integration tests in this folder")
 
 # Test configuration
 TIMEOUT = 120.0
